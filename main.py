@@ -3,7 +3,11 @@ from fastapi.responses import JSONResponse
 import tensorflow as tf
 import numpy as np
 from PIL import Image
+from dotenv import load_dotenv
 from io import BytesIO
+import os
+
+load_dotenv()
 
 app = FastAPI()
 
@@ -23,7 +27,7 @@ def load_tfjs_model(model_path):
         print(f"Error loading TensorFlow.js model: {e}")
 
 # Load the model during startup
-load_tfjs_model('./model/my_model.h5')
+load_tfjs_model(os.getenv("MODEL_PATH"))
 
 @app.get("/")
 def config():
@@ -53,7 +57,17 @@ async def predict_classification(model, image):
         image = tf.keras.applications.mobilenet.preprocess_input(image)
 
         prediction = model.predict(image)
-        score = await tf.make_ndarray(prediction)
-        confidence_score = np.max(score) * 100
 
-        return {'confidenceScore': confidence_score}
+        return classification(prediction.tolist()[0])
+
+def classification(result):
+    acne = result[0]
+    redness = result[1]
+    eyebags = result[2]
+
+    if (acne > redness and acne > eyebags):
+        return {"issue": "Acne", "score": acne}
+    elif (redness > acne and redness > eyebags):
+        return {"issue": "Redness", "score": redness}
+    elif (eyebags > acne and eyebags > redness):
+        return {"issue": "Eyebags", "score": redness}
