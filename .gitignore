@@ -1,3 +1,5 @@
 env/
+image/
+model/
 .git
 **/__pycache__
